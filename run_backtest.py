@@ -5,7 +5,10 @@
 from __future__ import annotations
 
 import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# alpha_predator/ 是包所在目录，但 config/data/signals 等是它的子目录
+# 所以加父目录（工作区根）进 sys.path，让 "from config.xxx" 能找到 alpha_predator/config
+_ALPHA_ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _ALPHA_ROOT)
 
 from datetime import date, timedelta
 from data.fetcher import DataManager, MockFetcher
