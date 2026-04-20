@@ -1,0 +1,10 @@
+# AlphaPredator 依赖
+numpy>=1.21.0
+pandas>=1.3.0
+scipy>=1.7.0
+akshare>=1.10.0           # A股数据源（可选，有数据时自动降级）
+# tushare>=1.3.0           # 备用数据源（需要token）
+# vnpy>=2.6.0              # 实盘接口（可选）
+tabulate>=0.9.0            # 表格输出
+matplotlib>=3.5.0         # 可视化
+seaborn>=0.12.0           # 图表美化
