@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        # alpha_predator 项目根目录
         working-directory: alpha_predator
 
     steps:
@@ -40,7 +39,6 @@ from signals.regime_detector import RegimeDetector
 from signals.anti_quant import AntiQuantEngine
 from backtest.engine import BacktestEngine
 
-# Quick smoke test
 mgr = MockFetcher(seed=42)
 bars = mgr.get_bars('TEST', date(2025,1,1), date(2025,3,1), '1D')
 close = bars['close']
@@ -52,7 +50,7 @@ AntiQuantEngine().compute_anti_quant_score(**ohlcv)
 trade_signals = [1.0 if sig['alpha_scores'][i] > 0.3 else 0.0 for i in range(len(close))]
 result = BacktestEngine(initial_capital=1_000_000).run(close, trade_signals)
 
-assert result['total_trades'] >= 0, 'No trades generated'
+assert result['total_trades'] >= 0
 print('All smoke tests passed!')
 print(f'Total trades: {result[\"total_trades\"]}')
 print(f'Total return: {result[\"total_return\"]:.2%}')
