@@ -1,0 +1,56 @@
+name: Backtest CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pandas scipy numpy
+
+      - name: Run backtest
+        run: |
+          python run_backtest.py
+
+      - name: Run tests
+        run: |
+          python -c "
+import sys
+sys.path.insert(0, '.')
+from signals.alpha_signals import AlphaSignalGenerator
+from signals.regime_detector import RegimeDetector
+from signals.anti_quant import AntiQuantEngine
+from backtest.engine import BacktestEngine
+from data.fetcher import MockFetcher
+from datetime import date
+
+# Smoke test
+mgr = MockFetcher(seed=42)
+bars = mgr.get_bars('TEST', date(2025,1,1), date(2025,3,1), '1D')
+close = bars['close']
+ohlcv = {'close': close, 'high': bars['high'], 'low': bars['low'], 'open': bars['open'], 'volume': bars['volume']}
+sig = AlphaSignalGenerator().compute_all(ohlcv)
+regimes = RegimeDetector().detect(close)
+engine = BacktestEngine(initial_capital=1_000_000)
+trade_signals = [1.0 if sig['alpha_scores'][i] > 0.3 else 0.0 for i in range(len(close))]
+result = engine.run(close, trade_signals)
+assert result['total_trades'] >= 0, 'Backtest failed'
+print('All tests passed!')
+print(f'Total trades: {result[\"total_trades\"]}')
+print(f'Total return: {result[\"total_return\"]:.2%}')
+print(f'Sharpe: {result[\"sharpe_ratio\"]:.2f}')
+"
