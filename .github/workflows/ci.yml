@@ -1,20 +1,12 @@
 name: Backtest CI
-on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+on: [push, pull_request]
 jobs:
   backtest:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: alpha_predator
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - run: pip install pandas scipy numpy
-      - run: python run_backtest.py
-      - run: python -c "import sys; sys.path.insert(0, '.'); from data.fetcher import MockFetcher; from signals.alpha_signals import AlphaSignalGenerator; from signals.regime_detector import RegimeDetector; from signals.anti_quant import AntiQuantEngine; from backtest.engine import BacktestEngine; from datetime import date; mgr = MockFetcher(seed=42); bars = mgr.get_bars('TEST', date(2025,1,1), date(2025,3,1), '1D'); close = bars['close']; ohlcv = {'close': close, 'high': bars['high'], 'low': bars['low'], 'open': bars['open'], 'volume': bars['volume']}; sig = AlphaSignalGenerator().compute_all(ohlcv); regimes = RegimeDetector().detect(close); AntiQuantEngine().compute_anti_quant_score(**ohlcv); trade_signals = [1.0 if sig['alpha_scores'][i] > 0.3 else 0.0 for i in range(len(close))]; result = BacktestEngine(initial_capital=1_000_000).run(close, trade_signals); assert result['total_trades'] >= 0; print('OK: smoke test passed. Trades:', result['total_trades'], 'Return:', result['total_return'], 'Sharpe:', result['sharpe_ratio'])"
+      - run: cd alpha_predator && python run_backtest.py
