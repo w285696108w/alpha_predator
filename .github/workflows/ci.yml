@@ -9,4 +9,4 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install pandas scipy numpy
-      - run: cd alpha_predator && python run_backtest.py
+      - run: python run_backtest.py
