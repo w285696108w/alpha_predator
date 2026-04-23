@@ -47,6 +47,50 @@ For research and educational purposes only. Not financial advice.
 
 ---
 
+
+## UI Preview
+
+### Web Dashboard (Streamlit)
+
+`app.py` is AlphaPredator's visual interface, built with **Streamlit** + **Plotly**:
+
+```bash
+# Launch Dashboard
+streamlit run app.py
+```
+
+**Features:**
+- **Sidebar controls**: Start/end date, initial capital, data source (mock / akshare), Kelly fraction, trailing stop %, signal threshold
+- **One-click backtest**: Batch run on 5 simulated symbols (STOCK_A/B/C/D + INDEX_300)
+- **Interactive charts** (Plotly):
+  - Price curve with buy/sell signal markers (▲▼)
+  - Alpha signal (green fill)
+  - Anti-Quant score (yellow line)
+  - Equity curve (blue) + cumulative return % (green/red)
+- **Metrics cards**: Total return, annualized return, Sharpe, max drawdown, trade count, win rate
+
+**Theme:** Dark mode (`#0E1117` bg), accent green (`#00C896`), danger red (`#FF4B4B`)
+
+---
+
+### Paper Trading Entry Point
+
+`main.py` provides a CLI for paper/simulated trading:
+
+```bash
+# Paper trade (default: AKShare data)
+python main.py --mode paper --symbols 000001 600036 600519
+
+# Parameters
+# --mode    paper=simulated / live=production (needs broker API)
+# --symbols  stock code list (Shanghai / Shenzhen)
+# --capital  initial capital (default 1,000,000)
+```
+
+**Output:** Per-trade log + position snapshots + end-of-day report
+
+---
+
 ## Changelog
 
 ### v1.1 - CI/CD + Bug Fixes (2026-04-23)
