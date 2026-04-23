@@ -67,7 +67,7 @@ class TestRSI:
     def test_rsi_short(self):
         close = [100, 101, 102]
         r = rsi(close, period=14)
-        assert len(r) == 3
+        assert len(r) == 3  # output length == input length, all 50.0 (not enough data)
 
 
 class TestMACD:
@@ -103,10 +103,11 @@ class TestRank:
         data = [30, 10, 40, 20]
         r = rank(data)
         assert len(r) == 4
-        # 10 是最小，排第0 -> 0/(4-1)=0
-        assert r[1] == 0.0
-        # 40 是最大，排第3 -> 3/(4-1)=1
-        assert r[2] == 1.0
+        # 排序: 30(idx0)->0, 10(idx1)->1/3, 40(idx2)->2/3, 20(idx3)->1
+        assert abs(r[0] - 0.0) < 0.001       # idx0=30 最小排第0位
+        assert abs(r[1] - 1.0/3.0) < 0.001  # idx1=10 排第1位
+        assert abs(r[2] - 2.0/3.0) < 0.001  # idx2=40 排第2位
+        assert abs(r[3] - 1.0) < 0.001      # idx3=20 最大排第3位
 
     def test_rank_equal(self):
         data = [5, 5, 5, 5]
