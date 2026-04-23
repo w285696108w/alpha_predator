@@ -63,7 +63,8 @@ class BacktestEngine:
             sell_price = current_price * (1 - self.slippage_rate)
 
             # ── 平仓 ──
-            if signal == 0 and position != 0:
+            # 两种情况需要平仓：信号为0，或者信号方向与持仓方向相反（多转空/空转多）
+            if (signal == 0 or (position != 0 and signal * position < 0)) and position != 0:
                 if position > 0:
                     # 平多：按卖价结算
                     gross = position * sell_price

@@ -144,28 +144,34 @@ def vwap(close: List[float], high: List[float], low: List[float],
 
 def rsi(close: List[float], period: int = 14) -> List[float]:
     """RSI相对强弱"""
-    if len(close) < 2:
-        return [50.0] * len(close)
+    n = len(close)
+    if n == 0:
+        return []
+    if n < 2:
+        return [50.0] * n
 
-    deltas = [0.0] + [close[i] - close[i - 1] for i in range(1, len(close))]
+    deltas = [0.0] + [close[i] - close[i - 1] for i in range(1, n)]
     gains = [max(d, 0) for d in deltas]
     losses = [abs(min(d, 0)) for d in deltas]
 
-    result = [50.0] * period  # 初始填充
+    result: List[float] = []
 
-    avg_gain = mean(gains[:period]) if period > 0 else 0
-    avg_loss = mean(losses[:period]) if period > 0 else 0
-
-    for i in range(period, len(close)):
-        if i > period:
-            avg_gain = (avg_gain * (period - 1) + gains[i]) / period
-            avg_loss = (avg_loss * (period - 1) + losses[i]) / period
-
-        if avg_loss == 0:
-            result.append(100.0)
+    for i in range(n):
+        if i < period:
+            result.append(50.0)
         else:
-            rs = avg_gain / avg_loss
-            result.append(100.0 - (100.0 / (1.0 + rs)))
+            if i == period:
+                avg_gain = mean(gains[1:period + 1])
+                avg_loss = mean(losses[1:period + 1])
+            else:
+                avg_gain = (avg_gain * (period - 1) + gains[i]) / period
+                avg_loss = (avg_loss * (period - 1) + losses[i]) / period
+
+            if avg_loss == 0:
+                result.append(100.0)
+            else:
+                rs = avg_gain / avg_loss
+                result.append(100.0 - (100.0 / (1.0 + rs)))
 
     return result
 
@@ -209,12 +215,21 @@ def rank(data: List[float]) -> List[float]:
     """百分位排名 (0~1)"""
     if not data:
         return []
-    sorted_data = sorted(enumerate(data), key=lambda x: x[1])
     n = len(data)
-    result = [0.0] * n
-    for rank_val, (idx, _) in enumerate(sorted_data):
-        result[idx] = rank_val / (n - 1) if n > 1 else 0.5
-    return result
+    if n == 1:
+        return [0.5]
+    # Group by value, collect all positions
+    pos_by_val: dict = {}
+    for idx, val in enumerate(data):
+        pos_by_val.setdefault(val, []).append(idx)
+    # Average rank for each value group, then normalize to [0,1]
+    ranks = [0.0] * n
+    for val, positions in pos_by_val.items():
+        avg_pos = sum(positions) / len(positions)  # average position for tie
+        rank_val = avg_pos / (n - 1) if n > 1 else 0.5
+        for pos in positions:
+            ranks[pos] = rank_val
+    return ranks
 
 
 def sharpe_ratio(returns: List[float], risk_free: float = 0.03) -> float:
