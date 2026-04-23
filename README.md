@@ -133,3 +133,79 @@ broker:
 ## 免责声明
 
 本项目仅供研究学习，不构成投资建议。实盘交易有风险。
+---
+
+## 更新日志 (Changelog)
+
+### v1.1 - CI/CD 完善 + Bug 修复 (2026-04-23)
+
+#### CI/CD 改进
+- **依赖缓存**：添加 pip 缓存加速 CI（缓存 key = `requirements.txt` hash）
+- **超时保护**：每个 job 设置 `timeout-minutes: 10`，防止挂起
+- **完整依赖安装**：`pip install -r requirements.txt && pip install pytest`
+- **双重验证**：单元测试（pytest）+ 回测冒烟测试（`python run_backtest.py`）
+
+#### Bug 修复
+
+| 模块 | 问题 | 修复 |
+|------|------|------|
+| `utils.py` `rsi()` | 数据长度 < period 时错误返回 period 个 50.0 填充值 | 改为返回原始数据长度，RSI 50.0 表示无信号 |
+| `utils.py` `rank()` | 全相同值时用 index 排序打破 tie，导致 rank 不均匀 | 改为所有相同值返回 rank = 0.5（均匀分布） |
+| `backtest/engine.py` | 多头转空头时 `signal=-1` 不触发平仓（平仓条件仅限 `signal==0`） | 改为 `signal==0 or signal*position<0`，方向切换时先平仓再反向开仓 |
+
+#### 测试覆盖
+
+```
+tests/
+├── __init__.py
+├── test_backtest_engine.py    # 8 tests
+│   ├── test_engine_empty        # 空数据返回零值
+│   ├── test_engine_no_signal    # 无信号不开仓
+│   ├── test_engine_long_signal  # 多头信号正确执行
+│   ├── test_engine_short_signal # 空头信号正确执行
+│   ├── test_engine_reversal     # 多→空方向切换，多空各平仓一次
+│   ├── test_engine_commission   # 佣金+印花税计入
+│   ├── test_engine_win_rate     # 胜率计算
+│   └── test_engine_max_drawdown # 最大回撤计算
+└── test_utils.py               # 23 tests
+    ├── TestMeanStd (3)          # 均值/标准差
+    ├── TestRolling (4)           # 滚动均值/标准差/最大/最小
+    ├── TestRSI (3)               # RSI rising/falling/short
+    ├── TestMACD (2)              # MACD + Signal
+    ├── TestBollingerBands (1)    # 布林带
+    ├── TestRank (2)              # rank 排名（含相同值处理）
+    ├── TestSharpeRatio (3)       # 夏普比率
+    └── TestPctChange (2)        # 百分比变化
+
+Total: 31 tests passing
+```
+
+#### 本地运行测试
+
+```bash
+# 安装 pytest
+pip install pytest
+
+# 进入项目目录
+cd scripts/alpha_predator
+
+# 运行全部测试
+python -m pytest ../../tests/ -v
+
+# 只测 backtest engine
+python -m pytest ../../tests/test_backtest_engine.py -v
+
+# 只测 utils
+python -m pytest ../../tests/test_utils.py -v
+```
+
+---
+
+### v1.0 - 初始版本 (2026-04-22)
+
+AlphaPredator 散户型反量化交易系统 v1.0，包含：
+- Alpha 信号合成（RSI、MACD、布林带、动量突破）
+- 纯 Python 回测引擎（无 numpy 依赖）
+- 自适应仓位管理 + 趋势跟踪止损
+- 机构追踪（龙虎榜、融资融券）
+- 尾部风险对冲（尾部择时）
