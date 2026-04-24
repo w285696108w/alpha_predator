@@ -26,6 +26,13 @@ from typing import Optional
 class BaseDataFetcher(ABC):
     """数据源抽象基类"""
 
+    @classmethod
+    def _parse_date(cls, d):
+        """将字符串("YYYY-MM-DD")或date转换为date对象"""
+        if isinstance(d, str):
+            return date.fromisoformat(d)
+        return d  # 已是 date 或 datetime 对象
+
     @abstractmethod
     def get_bars(self, symbol: str, start: date, end: date,
                  freq: str = "1D") -> dict:
@@ -34,8 +41,8 @@ class BaseDataFetcher(ABC):
 
         Args:
             symbol: 股票代码，如 "000001"（深市）或 "600000"（沪市）
-            start:  开始日期
-            end:    结束日期
+            start:  开始日期，支持 "YYYY-MM-DD" 字符串或 date 对象
+            end:    结束日期，支持 "YYYY-MM-DD" 字符串或 date 对象
             freq:   频率 "1D"(日线) / "1W"(周线) / "1M"(月线)
 
         Returns:
@@ -76,9 +83,10 @@ class MockFetcher(BaseDataFetcher):
         self.phase = phase or self.PHASES[seed % len(self.PHASES)]
         self._rng = random.Random(seed)
 
-    def get_bars(self, symbol: str, start: date, end: date,
-                 freq: str = "1D") -> dict:
+    def get_bars(self, symbol: str, start, end, freq: str = "1D") -> dict:
         import math
+        start = self._parse_date(start)
+        end = self._parse_date(end)
         days = (end - start).days + 1
         if days < 2:
             return {}
@@ -147,8 +155,9 @@ class AKShareFetcher(BaseDataFetcher):
             return f"{s}.SZ"
         return s
 
-    def get_bars(self, symbol: str, start: date, end: date,
-                 freq: str = "1D") -> dict:
+    def get_bars(self, symbol: str, start, end, freq: str = "1D") -> dict:
+        start = self._parse_date(start)
+        end = self._parse_date(end)
         sym = self.normalize_symbol(symbol)
         period_map = {"1D": "daily", "D": "daily", "1W": "weekly",
                       "W": "weekly", "1M": "monthly", "M": "monthly"}
@@ -213,8 +222,9 @@ class BaostockFetcher(BaseDataFetcher):
                 print(f"[BaostockFetcher] login failed: {e}")
                 raise
 
-    def get_bars(self, symbol: str, start: date, end: date,
-                 freq: str = "1D") -> dict:
+    def get_bars(self, symbol: str, start, end, freq: str = "1D") -> dict:
+        start = self._parse_date(start)
+        end = self._parse_date(end)
         sym = self.normalize_symbol(symbol)
         try:
             self._ensure_login()
@@ -297,14 +307,15 @@ class TushareFetcher(BaseDataFetcher):
             return f"{s}.SZ"
         return s
 
-    def get_bars(self, symbol: str, start: date, end: date,
-                 freq: str = "1D") -> dict:
+    def get_bars(self, symbol: str, start, end, freq: str = "1D") -> dict:
+        start = self._parse_date(start)
+        end = self._parse_date(end)
         sym = self.normalize_symbol(symbol)
         token = self._get_token()
         if not token:
             print("[TushareFetcher] No token, falling back to MockFetcher")
             seed_map = {"000001": 42, "600000": 137, "000300": 1, "000016": 256, "399006": 999}
-            seed = seed_map.get(sym.split(".")[0], hash(sym) % 9999)
+            seed = seed_map.get(sym.split(".")[0], hash(sym) % 9994)
             return MockFetcher(seed=seed).get_bars(symbol, start, end, freq)
         try:
             import tushare as ts
