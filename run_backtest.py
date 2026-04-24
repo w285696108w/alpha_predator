@@ -21,8 +21,11 @@ from config.settings import CONFIG
 
 def run_single_backtest(symbol: str, seed: int, start: date, end: date) -> dict:
     """运行单个标的回测"""
-    mgr = DataManager("mock")
-    mgr.fetcher = MockFetcher(seed=seed)
+    import os
+    ds = os.environ.get("ALPHA_DATA_SOURCE", CONFIG.data_source.source)
+    mgr = DataManager(source=ds)
+    if ds == "mock":
+        mgr.fetcher = MockFetcher(seed=seed)
     bars = mgr.get_bars(symbol, start, end, "1D")
 
     if not bars or not bars.get("close"):
